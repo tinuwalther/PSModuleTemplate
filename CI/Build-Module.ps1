@@ -50,7 +50,7 @@ Write-Host "[BUILD] [END  ] [PSM1] building Module PSM1 " -ForegroundColor Yello
 Write-Host "[BUILD] [START] [PSD1] Manifest PSD1" -ForegroundColor Yellow
 $FullModuleName = Join-Path -Path $ModuleFolderPath -ChildPath "$($ModuleName).psd1"
 if(-not(Test-Path $FullModuleName)){
-    New-ModuleManifest "$($ModuleName).psd1" -ModuleVersion $ModuleVersion -Author $ModuleAuthor
+    New-ModuleManifest -Path $FullModuleName -ModuleVersion $ModuleVersion -Author $ModuleAuthor -RootModule "$($ModuleName).psm1" -PowerShellVersion 5.1
 }
 
 Write-Host "[BUILD] [PSD1 ] Adding functions to export" -ForegroundColor Yellow
@@ -70,7 +70,7 @@ if((Get-Module -Name Pester).Version -match '^3\.\d{1}\.\d{1}'){
 Describe 'General module control' -Tags 'FunctionalQuality'   {
 
     It "Import $ModuleName without errors" {
-        { Import-Module -Name $ModuleFolderPath -Force -ErrorAction Stop } | Should Not Throw
+        { Import-Module -Name $Manifest -Force -ErrorAction Stop } | Should Not Throw
         Get-Module $ModuleName | Should Not BeNullOrEmpty
     }
 
