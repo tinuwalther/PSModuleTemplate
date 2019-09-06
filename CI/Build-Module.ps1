@@ -26,8 +26,7 @@ if(Test-Path $ExportPath){
 # Prepare new PSM1-File
 $Date = Get-Date
 "<#" | out-File -FilePath $ExportPath -Encoding utf8 -Append
-"    Generated at $($Date) by Swisscom (Schweiz) AG" | out-File -FilePath $ExportPath -Encoding utf8 -Append
-"    using module ..\$($ModuleName).psm1" | out-File -FilePath $ExportPath -Encoding utf8 -Append
+"    Generated at $($Date) by $($ModuleAuthor)" | out-File -FilePath $ExportPath -Encoding utf8 -Append
 "#>" | out-File -FilePath $ExportPath -Encoding utf8 -Append
 
 Write-Host "[BUILD] [Code ] Loading Class, public and private functions" -ForegroundColor Yellow
