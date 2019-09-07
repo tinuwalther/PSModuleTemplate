@@ -14,6 +14,7 @@
     - [Module-File](#module-file)
   - [Tests](#tests)
     - [Functions.Tests.ps1](#functionstestsps1)
+    - [Functions.Tests.json](#functionstestsjson)
 
 # PowerShell Module Template
 
@@ -24,8 +25,7 @@ How to create a new PowerShell-Module with PSModuleTemplate?
 3. Copy the content from PSModuleTemplate into your new project
 4. Update the README.md and CHANGELOG.md with your information
 5. Save your function-files in the folder Code
-6. Test your functions with the Functions.Tests.ps1
-7. Build your Module with Build-Module.ps1
+6. Build your Module with Build-Module.ps1
 
 ## README
 
@@ -43,8 +43,8 @@ This is the folder for all Continous Integration scripts like a script to automa
 
 This script builds your module automatically.  
 
-Build-Module.ps1 delete the existent Module-File (PSM1) and create a new Module-File (PSM1) with all of your functions.  
-The script also update the Manifest-File (PSD1) with the functions to export. If the Manifest-File doesn't exists, it will be created.
+Build-Module.ps1 running the Functions.Tests.ps1, if no errors occured it delete the existent Module-File (PSM1) and create a new Module-File (PSM1) with all of your functions.
+The script also updates the Manifest-File (PSD1) with the functions to export. If the Manifest-File doesn't exists, it will be created.
 
 Finally Build-Module.ps1 tests if your Module can be imported and removed without any errors. It tests also if the Module contains all of your exported functions.
 
@@ -85,4 +85,7 @@ This folder contains all the Pester-Test-scripts.
 ### Functions.Tests.ps1
 
 Functions.Tests.ps1 tests all of your scripts/functions in the folder Code.  
-Before you run Build-Module.ps1, please make sure that Tests\Functions.Tests.ps1 was executed without any errors.
+
+### Functions.Tests.json
+
+This file will be created, if there were some errors in the Build-Module.

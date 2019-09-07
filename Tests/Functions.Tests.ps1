@@ -51,6 +51,11 @@ $CommonPrefix     = 'SCS'
         }
 
         Context "Parameters" {
+
+            It "$ScriptName $($_.Name) should have a function $ScriptName" {
+                ($Ast -match $ScriptName) | Should -be $true
+            }
+
             It "$ScriptName should have a CmdletBinding" {
                 [boolean]( @( $Ast.FindAll( { $true } , $true ) ) | Where-Object { $_.TypeName.Name -eq 'cmdletbinding' } ) | Should -Be $true
             }
