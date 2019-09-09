@@ -28,16 +28,31 @@ function Get-SCSSomeSettings{
     $function = $($MyInvocation.MyCommand.Name)
     Write-Verbose "Running $function"
 
-    $ret = -404
+    $ret = [PSCustomObject]@{
+        Succeeded  = $false
+        Function   = $function
+        Message    = 'Not found'
+    }
+
     try{
         #your code here
-        return $ret
+        $ret = [PSCustomObject]@{
+            Succeeded  = $true
+            Function   = $function
+        }
     }
     catch{
-        Write-Host "$($function): $($_.Exception.Message)" -ForegroundColor Yellow
+        $ret = [PSCustomObject]@{
+            Succeeded  = $false
+            Function   = $function
+            Activity   = $($_.CategoryInfo).Activity
+            Message    = $($_.Exception.Message)
+            Category   = $($_.CategoryInfo).Category
+            Exception  = $($_.Exception.GetType().FullName)
+            TargetName = $($_.CategoryInfo).TargetName
+        }
         #don't forget to clear the error-object
         $error.Clear()
-        $ret = -400
     }
     return $ret
 }
