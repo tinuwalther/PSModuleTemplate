@@ -1,13 +1,23 @@
 # Some examples are from Josh Burkard, thanks!
 # https://www.burkard.it/2019/08/pester-tests-for-powershell-functions/
 
-#region declarations
+#region prepare folders
 $Current          = (Split-Path -Path $MyInvocation.MyCommand.Path)
 $Root             = ((Get-Item $Current).Parent).FullName
 $CodeSourcePath   = Join-Path -Path $Root -ChildPath "Code"
-$CommonPrefix     = 'SCS'
+$CISourcePath     = Join-Path -Path $Root -ChildPath "CI"
+$Settings         = Join-Path -Path $CISourcePath -ChildPath "Module-Settings.json"
+#endregion
 
- Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1" | ForEach-Object {
+#region Module-Settings
+if([String]::IsNullOrEmpty($ModulePrefix)){
+    $ModuleSettings = Get-content -Path $Settings | ConvertFrom-Json
+    $ModulePrefix   = $ModuleSettings.ModulePrefix
+}
+$CommonPrefix = $ModulePrefix
+#endregion
+
+Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1" | ForEach-Object {
 
     Describe "Testing Code-file $($_.Name)" {
 

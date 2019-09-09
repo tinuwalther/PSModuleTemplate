@@ -6,8 +6,38 @@ Write-Host "[BUILD] [START] Launching Build Process" -ForegroundColor Green
 $Current          = (Split-Path -Path $MyInvocation.MyCommand.Path)
 $Root             = ((Get-Item $Current).Parent).FullName
 $TestsPath        = Join-Path -Path $Root -ChildPath "Tests"
+$CISourcePath     = Join-Path -Path $Root -ChildPath "CI"
 $TestsScript      = Join-Path -Path $TestsPath -ChildPath "Functions.Tests.ps1"
 $TestsFailures    = Join-Path -Path $TestsPath -ChildPath "Functions.Tests.json"
+$Settings         = Join-Path -Path $CISourcePath -ChildPath "Module-Settings.json"
+#endregion
+
+#region Module-Settings
+if(Test-Path -Path $Settings){
+    $ModuleSettings    = Get-content -Path $Settings | ConvertFrom-Json
+    $ModuleName        = $ModuleSettings.ModuleName
+    $ModuleDescription = $ModuleSettings.ModuleDescription
+    $ModuleVersion     = $ModuleSettings.ModuleVersion
+    $ModuleAuthor      = $ModuleSettings.ModuleAuthor
+    $ModuleCompany     = $ModuleSettings.ModuleCompany
+    $ModulePrefix      = $ModuleSettings.ModulePrefix
+}
+else{
+    $ModuleName        = Read-Host 'Enter the name of the module without the extension'
+    $ModuleVersion     = Read-Host 'Enter the Version number of this module in the Semantic Versioning notation'
+    $ModuleDescription = Read-Host 'Enter the Description of the functionality provided by this module'
+    $ModuleAuthor      = Read-Host 'Enter the Author of this module'
+    $ModuleCompany     = Read-Host 'Enter the Company or vendor of this module'
+    $ModulePrefix      = Read-Host 'Enter the Prefix for all functions of this module'
+    [PSCustomObject] @{
+        ModuleName        = $ModuleName
+        ModuleVersion     = $ModuleVersion
+        ModuleDescription = $ModuleDescription
+        ModuleAuthor      = $ModuleAuthor
+        ModuleCompany     = $ModuleCompany
+        ModulePrefix      = $ModulePrefix
+    } | ConvertTo-Json | Out-File -FilePath $Settings -Encoding utf8
+}
 #endregion
 
 #Running Pester Tests
@@ -19,31 +49,7 @@ if(Test-Path -Path $TestsFailures){
 }
 Write-Host "[BUILD] [TEST]  Running Function-Tests" -ForegroundColor Green
 $TestsResult      = Invoke-Pester -Script $TestsScript -PassThru -Show None
-if($TestsResult.FailedCount -eq 0){
-
-    $Settings         = Join-Path -Path $Current -ChildPath "Module-Settings.json"
-    if(Test-Path -Path $Settings){
-        $ModuleSettings    = Get-content -Path $Settings | ConvertFrom-Json
-        $ModuleName        = $ModuleSettings.ModuleName
-        $ModuleDescription = $ModuleSettings.ModuleDescription
-        $ModuleVersion     = $ModuleSettings.ModuleVersion
-        $ModuleAuthor      = $ModuleSettings.ModuleAuthor
-        $ModuleCompany     = $ModuleSettings.ModuleCompany
-    }
-    else{
-        $ModuleName        = Read-Host 'Enter the name of the module without the extension'
-        $ModuleVersion     = Read-Host 'Enter the Version number of this module in the Semantic Versioning notation'
-        $ModuleDescription = Read-Host 'Enter the Description of the functionality provided by this module'
-        $ModuleAuthor      = Read-Host 'Enter the Author of this module'
-        $ModuleCompany     = Read-Host 'Enter the Company or vendor of this module'
-        [PSCustomObject] @{
-            ModuleName        = $ModuleName
-            ModuleVersion     = $ModuleVersion
-            ModuleDescription = $ModuleDescription
-            ModuleAuthor      = $ModuleAuthor
-            ModuleCompany     = $ModuleCompany
-        } | ConvertTo-Json | Out-File -FilePath $Settings -Encoding utf8
-    }
+if($TestsResult.FailedCount -eq 0){    
     $ModuleFolderPath = Join-Path -Path $Root -ChildPath $ModuleName
     #$ModuleFolderPath = $Root
     $CodeSourcePath   = Join-Path -Path $Root -ChildPath "Code"
