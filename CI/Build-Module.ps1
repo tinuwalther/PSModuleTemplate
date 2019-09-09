@@ -10,6 +10,7 @@ $CISourcePath     = Join-Path -Path $Root -ChildPath "CI"
 $TestsScript      = Join-Path -Path $TestsPath -ChildPath "Functions.Tests.ps1"
 $TestsFailures    = Join-Path -Path $TestsPath -ChildPath "Functions.Tests.json"
 $Settings         = Join-Path -Path $CISourcePath -ChildPath "Module-Settings.json"
+$HelpPath         = Join-Path -Path $Root -ChildPath "Help"
 #endregion
 
 #region Module-Settings
@@ -138,6 +139,182 @@ if($TestsResult.FailedCount -eq 0){
     }
     #endregion
     Write-Host "[BUILD] [END]   Launching Build Process" -ForegroundColor Green	
+
+    #region build Help files
+    Write-Host "[BUILD] [START] Launching build Help files" -ForegroundColor Green	
+
+    Import-Module -Name $Manifest
+    $Functions = Get-Command -Module $ModuleName -CommandType Function
+
+    if ( -not ( Test-Path -Path $HelpPath ) ) {
+        New-Item -Path $HelpPath -ItemType Directory | Out-Null
+    }
+
+    $FunctionName = @( $Functions )[0].Name
+    foreach ( $FunctionName in @( $Functions | Sort-Object Name | Select-Object -ExpandProperty Name ) ) {
+        # $Help = Get-Help $FunctionName -Full -Path $FunctionName
+        $Help = Get-Help  $FunctionName 
+        $Function = Get-Command $FunctionName
+        
+        $Ast = $Function.ScriptBlock.Ast
+        $Examples = @( $Ast.GetHelpContent().EXAMPLES )
+    
+        #region create file content
+            #region function name, SYNOPSIS
+                $FileContent = @"
+# $( $Help.Name )
+
+## SYNOPSIS
+
+$( $Help.Synopsis )
+
+
+"@
+            #endregion function name, SYNOPSIS
+    
+            #region SYNTAX
+                $FileContent += @"
+## SYNTAX
+
+``````powershell
+$( ( ( $Help.syntax | Out-String ) -replace "`r`n", "`r`n`r`n" ).Trim() )
+``````
+
+
+"@
+            #endregion SYNTAX
+    
+            #region DESCRIPTION
+                $FileContent += @"
+## DESCRIPTION
+
+$( ( $Help.description | Out-String ).Trim() )
+
+
+"@
+            #endregion DESCRIPTION
+    
+            #region PARAMETERS
+                $FileContent += @"
+## PARAMETERS
+
+
+"@
+                foreach ($parameter in $Help.parameters.parameter) {
+                    $FileContent += @"
+### -$($parameter.name) &lt;$($parameter.type.name)&gt;
+
+$( ( $parameter.description | Out-String ).Trim() )
+
+``````
+$( ( ( ( $parameter | Out-String ).Trim() -split "`r`n")[-5..-1] | % { $_.Trim() } ) -join "`r`n" )
+
+"@
+                    if ( $Function.Parameters."$( $parameter.name )".Attributes[1].ValidValues ) {
+                        $FileContent += @"
+
+Valid Values:
+
+"@
+                        ( $Function.Parameters."$( $parameter.name )".Attributes[1].ValidValues ) | foreach {
+                            $FileContent += @"
+- $( $_ )
+    
+"@
+                        }
+                    }
+                    $FileContent += @"
+``````
+
+
+"@
+                }
+            #endregion PARAMETERS
+    
+            #region INPUTS
+                if ( $Help.inputTypes.inputType.type.name ) {
+                    $FileContent += @"
+## INPUTS
+
+$( $Help.inputTypes.inputType.type.name )
+
+
+"@
+                }
+            #endregion INPUTS
+    
+            #region OUTPUTS
+                $FileContent += @"
+## OUTPUTS
+
+$( @( $Help.returnValues.returnValue )[0].type.name)
+
+
+"@
+            #endregion OUTPUTS
+    
+            #region NOTES
+                if ( ( $Help.alertSet.alert | Out-String ).Trim() ) {
+                    $FileContent += @"
+## NOTES
+
+``````
+$( ( $Help.alertSet.alert | Out-String ).Trim() )
+``````
+
+
+"@
+                }
+            #endregion NOTES
+    
+            #region EXAMPLES
+                $FileContent += @"
+## EXAMPLES
+
+
+"@
+                for ($i = 0; $i -lt $Examples.Count; $i++) {
+                    $FileContent += @"
+### EXAMPLE $( $i + 1 )
+
+``````powershell
+$( ( @( $examples )[ $i ] ).ToString().Trim() )
+``````
+
+
+"@
+                }
+                <#
+                foreach ($example in $Help.examples.example) {
+                    $FileContent += @"
+    ### $(($example.title -replace '-*', '').Trim())
+    
+``````powershell
+$( @( $example.code ) -join "`r`n" )
+``````
+
+"@
+                }
+                #>
+            #endregion EXAMPLES
+
+            $FileContent = $FileContent -replace "$( [System.Environment]::NewLine )$( [System.Environment]::NewLine )$( [System.Environment]::NewLine )", "$( [System.Environment]::NewLine )$( [System.Environment]::NewLine )"
+
+            
+        #endregion create file content
+    
+        #region save file
+            $FileName = Join-Path -Path $HelpPath -ChildPath "$( $FunctionName ).md"
+            if ( Test-Path -Path $FileName ) {
+                Remove-Item -Path $FileName -Force -Confirm:$false | Out-Null
+            }
+            $FileContent | Out-File -FilePath $FileName -Force
+        #endregion save file
+    }
+    Write-Host "[BUILD] [END]   Launching build Help files" -ForegroundColor Green	
+
+#endregion build Help files
+
 }
 else{
     $TestsArray = $TestsResult.TestResult | ForEach-Object {

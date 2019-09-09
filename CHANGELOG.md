@@ -2,6 +2,7 @@
 
 Version | Description | Date | Author
 -|-|-|-
+1.0.4 | automatically create Help files for each function | 2019-09-09 | Josh Burkard
 1.0.3 | Save prefix in json instead of variable | 2019-09-09 | Martin Walther
 1.0.2 | Change return of functions to PsCustomObject | 2019-09-09 | Martin Walther
 1.0.1 | Automate some manually steps | 2019-09-07 | Martin Walther

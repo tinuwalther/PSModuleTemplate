@@ -9,6 +9,8 @@
     - [Module-Settings.json](#module-settingsjson)
   - [Code](#code)
     - [Get-SCSSomeSettings.ps1](#get-scssomesettingsps1)
+  - [Help](#help)
+    - [Get-SCSSomeSettings.md](#get-scssomesettingsmd)
   - [Module-Folder](#module-folder)
     - [Manifest-File](#manifest-file)
     - [Module-File](#module-file)
@@ -65,6 +67,12 @@ In this folder save all your functions as PS1-Files with the Name of the functio
 ### Get-SCSSomeSettings.ps1
 
 This is an example function-file, you can copy and rename this file for your own use. Before you build your module, please delete the Get-SCSSomeSettings.ps1.
+
+## Help
+
+### Get-SCSSomeSettings.md
+
+This is an example help file, you don't need to copy or use this file. it will be automatically created by the Build-Module script.
 
 ## Module-Folder
 
