@@ -125,7 +125,7 @@ if($TestsResult.FailedCount -eq 0){
             $functionname = $_
             It "Get-Command -Module $ModuleName should include Function $($functionname)" {
                 Get-Command -Module $ModuleName | ForEach-Object { 
-                    {if($functionname -match $_.Name){$true}} | should -betrue   
+                    {if($functionname -match $_.Name){$true}else{$false}} | should -betrue   
                 }
             }
         }
