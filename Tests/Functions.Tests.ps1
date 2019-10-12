@@ -77,9 +77,12 @@ Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1" | ForEach-Object {
                 }
     
                 $Declaration = ( ( @( $Ast.FindAll( { $true } , $true ) ) | Where-Object { $_.Name.Extent.Text -eq "$('$')$p" } ).Extent.Text -replace 'INT32', 'INT' )
-                $VariableType = ( "\[$( $ScriptCommand.Parameters."$p".ParameterType.Name )\]" -replace 'INT32', 'INT' )
+                #$VariableType = ( "\[$( $ScriptCommand.Parameters."$p".ParameterType.Name )\]" -replace 'INT32', 'INT' )
                 $VariableTypeFull = "\[$( $ScriptCommand.Parameters."$p".ParameterType.FullName )\]"
-                $VariableType = $ScriptCommand.Parameters."$p".ParameterType.Name -replace 'INT32', 'INT'
+                $VariableType = $ScriptCommand.Parameters."$p".ParameterType.Name
+                $VariableType = $VariableType -replace 'INT32', 'INT'
+                $VariableType = $VariableType -replace 'String\[\]', 'String'
+                $VariableType = $VariableType -replace 'SwitchParameter', 'Switch'
                 It "$ScriptName type '[$( $ScriptCommand.Parameters."$p".ParameterType.Name )]' should be declared for parameter '$( $p )'" {
                     ( ( $Declaration -match $VariableType ) -or ( $Declaration -match $VariableTypeFull ) ) | Should -Be $true
                 }
