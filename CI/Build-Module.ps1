@@ -18,6 +18,8 @@ if(Test-Path -Path $Settings){
     $ModuleName        = $ModuleSettings.ModuleName
     $ModuleDescription = $ModuleSettings.ModuleDescription
     $ModuleVersion     = $ModuleSettings.ModuleVersion
+    $prompt            = Read-Host "Enter the Version number of this module in the Semantic Versioning notation [$( $ModuleVersion )]"
+    if (!$prompt -eq "") { $ModuleVersion = $prompt }
     $ModuleAuthor      = $ModuleSettings.ModuleAuthor
     $ModuleCompany     = $ModuleSettings.ModuleCompany
     $ModulePrefix      = $ModuleSettings.ModulePrefix
@@ -29,15 +31,15 @@ else{
     $ModuleAuthor      = Read-Host 'Enter the Author of this module'
     $ModuleCompany     = Read-Host 'Enter the Company or vendor of this module'
     $ModulePrefix      = Read-Host 'Enter the Prefix for all functions of this module'
-    [PSCustomObject] @{
-        ModuleName        = $ModuleName
-        ModuleVersion     = $ModuleVersion
-        ModuleDescription = $ModuleDescription
-        ModuleAuthor      = $ModuleAuthor
-        ModuleCompany     = $ModuleCompany
-        ModulePrefix      = $ModulePrefix
-    } | ConvertTo-Json | Out-File -FilePath $Settings -Encoding utf8
 }
+[PSCustomObject] @{
+    ModuleName        = $ModuleName
+    ModuleVersion     = $ModuleVersion
+    ModuleDescription = $ModuleDescription
+    ModuleAuthor      = $ModuleAuthor
+    ModuleCompany     = $ModuleCompany
+    ModulePrefix      = $ModulePrefix
+} | ConvertTo-Json | Out-File -FilePath $Settings -Encoding utf8
 #endregion
 
 #Running Pester Tests
