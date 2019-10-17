@@ -100,7 +100,7 @@ if($TestsResult.FailedCount -eq 0){
     Write-Host "[BUILD] [PSD1 ] Adding functions to export" -ForegroundColor Green
     $FunctionsToExport = $PublicFunctions.BaseName
     $Manifest = Join-Path -Path $ModuleFolderPath -ChildPath "$($ModuleName).psd1"
-    Update-ModuleManifest -Path $Manifest -FunctionsToExport $FunctionsToExport
+    Update-ModuleManifest -Path $Manifest -FunctionsToExport $FunctionsToExport -ModuleVersion $ModuleVersion
 
     Write-Host "[BUILD] [END  ] [PSD1] building Manifest" -ForegroundColor Green
     #endregion
