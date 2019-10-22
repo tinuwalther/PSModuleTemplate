@@ -1,3 +1,10 @@
+<#
+    this file is from to the PSModuleTemplate from 
+
+    https://github.com/tinuwalther/PSModuleTemplate
+
+    for a more accurate version, visit this github repository
+#>
 
 function Get-SCSSomeSettings{
 

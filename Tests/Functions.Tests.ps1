@@ -1,5 +1,13 @@
-# Some examples are from Josh Burkard, thanks!
-# https://www.burkard.it/2019/08/pester-tests-for-powershell-functions/
+<#
+    this file is from to the PSModuleTemplate from 
+
+    https://github.com/tinuwalther/PSModuleTemplate
+
+    for a more accurate version, visit this github repository
+
+    Some examples are from Josh Burkard, thanks!
+    https://www.burkard.it/2019/08/pester-tests-for-powershell-functions/
+#>
 
 #region prepare folders
 $Current          = (Split-Path -Path $MyInvocation.MyCommand.Path)
@@ -77,9 +85,11 @@ Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1" | ForEach-Object {
                 }
     
                 $Declaration = ( ( @( $Ast.FindAll( { $true } , $true ) ) | Where-Object { $_.Name.Extent.Text -eq "$('$')$p" } ).Extent.Text -replace 'INT32', 'INT' )
-                $VariableType = ( "\[$( $ScriptCommand.Parameters."$p".ParameterType.Name )\]" -replace 'INT32', 'INT' )
                 $VariableTypeFull = "\[$( $ScriptCommand.Parameters."$p".ParameterType.FullName )\]"
-                $VariableType = $ScriptCommand.Parameters."$p".ParameterType.Name -replace 'INT32', 'INT'
+                $VariableType = $ScriptCommand.Parameters."$p".ParameterType.Name
+                $VariableType = $VariableType -replace 'INT32', 'INT'
+                $VariableType = $VariableType -replace 'String\[\]', 'String'
+                $VariableType = $VariableType -replace 'SwitchParameter', 'Switch'
                 It "$ScriptName type '[$( $ScriptCommand.Parameters."$p".ParameterType.Name )]' should be declared for parameter '$( $p )'" {
                     ( ( $Declaration -match $VariableType ) -or ( $Declaration -match $VariableTypeFull ) ) | Should -Be $true
                 }

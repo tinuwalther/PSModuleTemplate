@@ -1,3 +1,10 @@
+<#
+    this file is from to the PSModuleTemplate from 
+
+    https://github.com/tinuwalther/PSModuleTemplate
+
+    for a more accurate version, visit this github repository
+#>
 # Semantic Versioning: https://semver.org/
 
 Write-Host "[BUILD] [START] Launching Build Process" -ForegroundColor Green	
@@ -50,6 +57,11 @@ if(Test-Path -Path $TestsFailures){
     Rename-Item -Path $TestsFailures -NewName $newname
 }
 Write-Host "[BUILD] [TEST]  Running Function-Tests" -ForegroundColor Green
+#region General Module-Tests
+if((Get-Module -Name Pester).Version -match '^3\.\d{1}\.\d{1}'){
+    Remove-Module -Name Pester
+}
+Import-Module -Name Pester -MinimumVersion 4.4.1 -Force
 $TestsResult      = Invoke-Pester -Script $TestsScript -PassThru -Show None
 if($TestsResult.FailedCount -eq 0){    
     $ModuleFolderPath = Join-Path -Path $Root -ChildPath $ModuleName
@@ -104,12 +116,6 @@ if($TestsResult.FailedCount -eq 0){
 
     Write-Host "[BUILD] [END  ] [PSD1] building Manifest" -ForegroundColor Green
     #endregion
-
-    #region General Module-Tests
-    if((Get-Module -Name Pester).Version -match '^3\.\d{1}\.\d{1}'){
-        Remove-Module -Name Pester
-        Import-Module -Name Pester -MinimumVersion 4.4.1
-    }
 
     Describe 'General module control' -Tags 'FunctionalQuality'   {
 
