@@ -1,5 +1,10 @@
 # Semantic Versioning: https://semver.org/
 
+if((Get-Module -Name Pester).Version -match '^3\.\d{1}\.\d{1}'){
+    Remove-Module -Name Pester
+    Import-Module -Name Pester -MinimumVersion 4.4.1
+}
+
 Write-Host "[BUILD] [START] Launching Build Process" -ForegroundColor Green	
 
 #region prepare folders
@@ -7,6 +12,7 @@ $Current          = (Split-Path -Path $MyInvocation.MyCommand.Path)
 $Root             = ((Get-Item $Current).Parent).FullName
 $TestsPath        = Join-Path -Path $Root -ChildPath "Tests"
 $CISourcePath     = Join-Path -Path $Root -ChildPath "CI"
+$CodeSourcePath   = Join-Path -Path $Root -ChildPath "Code"
 $TestsScript      = Join-Path -Path $TestsPath -ChildPath "Functions.Tests.ps1"
 $TestsFailures    = Join-Path -Path $TestsPath -ChildPath "Functions.Tests.json"
 $Settings         = Join-Path -Path $CISourcePath -ChildPath "Module-Settings.json"
@@ -18,25 +24,33 @@ if(Test-Path -Path $Settings){
     $ModuleName        = $ModuleSettings.ModuleName
     $ModuleDescription = $ModuleSettings.ModuleDescription
     $ModuleVersion     = $ModuleSettings.ModuleVersion
+    $prompt            = Read-Host "Enter the Version number of this module in the Semantic Versioning notation [$( $ModuleVersion )]"
+    if (!$prompt -eq "") { $ModuleVersion = $prompt }
     $ModuleAuthor      = $ModuleSettings.ModuleAuthor
     $ModuleCompany     = $ModuleSettings.ModuleCompany
     $ModulePrefix      = $ModuleSettings.ModulePrefix
 }
 else{
     $ModuleName        = Read-Host 'Enter the name of the module without the extension'
-    $ModuleVersion     = Read-Host 'Enter the Version number of this module in the Semantic Versioning notation'
+    $ModuleVersion     = Read-Host 'Enter the Version number of this module in the Semantic Versioning notation [1.0.0]'
     $ModuleDescription = Read-Host 'Enter the Description of the functionality provided by this module'
     $ModuleAuthor      = Read-Host 'Enter the Author of this module'
     $ModuleCompany     = Read-Host 'Enter the Company or vendor of this module'
     $ModulePrefix      = Read-Host 'Enter the Prefix for all functions of this module'
-    [PSCustomObject] @{
-        ModuleName        = $ModuleName
-        ModuleVersion     = $ModuleVersion
-        ModuleDescription = $ModuleDescription
-        ModuleAuthor      = $ModuleAuthor
-        ModuleCompany     = $ModuleCompany
-        ModulePrefix      = $ModulePrefix
-    } | ConvertTo-Json | Out-File -FilePath $Settings -Encoding utf8
+}
+[PSCustomObject] @{
+    ModuleName        = $ModuleName
+    ModuleVersion     = $ModuleVersion
+    ModuleDescription = $ModuleDescription
+    ModuleAuthor      = $ModuleAuthor
+    ModuleCompany     = $ModuleCompany
+    ModulePrefix      = $ModulePrefix
+} | ConvertTo-Json | Out-File -FilePath $Settings -Encoding utf8
+
+Get-ChildItem -Path $CodeSourcePath -Filter '*-*.ps1' | ForEach-Object {
+    $newname   = $($_.Name -replace '-PRE',"-$($ModulePrefix)") 
+    (Get-Content -Path $_.FullName) -replace '-PRE',"-$($ModulePrefix)" | Set-Content -Path $_.FullName
+    Rename-Item -Path $_.FullName -NewName $newname -PassThru
 }
 #endregion
 
@@ -52,7 +66,6 @@ $TestsResult      = Invoke-Pester -Script $TestsScript -PassThru -Show None
 if($TestsResult.FailedCount -eq 0){    
     $ModuleFolderPath = Join-Path -Path $Root -ChildPath $ModuleName
     #$ModuleFolderPath = $Root
-    $CodeSourcePath   = Join-Path -Path $Root -ChildPath "Code"
     if(-not(Test-Path -Path $ModuleFolderPath)){
         $null = New-Item -Path $ModuleFolderPath -ItemType Directory
     }
@@ -98,17 +111,12 @@ if($TestsResult.FailedCount -eq 0){
     Write-Host "[BUILD] [PSD1 ] Adding functions to export" -ForegroundColor Green
     $FunctionsToExport = $PublicFunctions.BaseName
     $Manifest = Join-Path -Path $ModuleFolderPath -ChildPath "$($ModuleName).psd1"
-    Update-ModuleManifest -Path $Manifest -FunctionsToExport $FunctionsToExport
+    Update-ModuleManifest -Path $Manifest -FunctionsToExport $FunctionsToExport -ModuleVersion $ModuleVersion
 
     Write-Host "[BUILD] [END  ] [PSD1] building Manifest" -ForegroundColor Green
     #endregion
 
     #region General Module-Tests
-    if((Get-Module -Name Pester).Version -match '^3\.\d{1}\.\d{1}'){
-        Remove-Module -Name Pester
-        Import-Module -Name Pester -MinimumVersion 4.4.1
-    }
-
     Describe 'General module control' -Tags 'FunctionalQuality'   {
 
         It "Import $ModuleName without errors" {
@@ -125,7 +133,7 @@ if($TestsResult.FailedCount -eq 0){
             $functionname = $_
             It "Get-Command -Module $ModuleName should include Function $($functionname)" {
                 Get-Command -Module $ModuleName | ForEach-Object { 
-                    {if($functionname -match $_.Name){$true}} | should -betrue   
+                    {if($functionname -match $_.Name){$true}else{$false}} | should -betrue   
                 }
             }
         }

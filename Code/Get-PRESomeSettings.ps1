@@ -1,5 +1,5 @@
 
-function Get-SCSSomeSettings{
+function Get-PRESomeSettings{
 
     <#
 

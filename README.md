@@ -8,7 +8,7 @@
     - [Build-Module.ps1](#build-moduleps1)
     - [Module-Settings.json](#module-settingsjson)
   - [Code](#code)
-    - [Get-SCSSomeSettings.ps1](#get-scssomesettingsps1)
+    - [Get-PRESomeSettings.ps1](#get-presomesettingsps1)
   - [Module-Folder](#module-folder)
     - [Manifest-File](#manifest-file)
     - [Module-File](#module-file)
@@ -60,11 +60,11 @@ The settings-file will be created, if you build the module at the first time and
 
 ## Code
 
-In this folder save all your functions as PS1-Files with the Name of the function you want to have in the Module. e.g. Get-SCSSomeSettings.ps1.
+In this folder save all your functions as PS1-Files with the Name of the function you want to have in the Module. e.g. Get-PRESomeSettings.ps1.
 
-### Get-SCSSomeSettings.ps1
+### Get-PRESomeSettings.ps1
 
-This is an example function-file, you can copy and rename this file for your own use. Before you build your module, please delete the Get-SCSSomeSettings.ps1.
+This is an example function-file, you can copy and rename this file for your own use. Before you build your module, please be sure that you renamed the function name within the file.
 
 ## Module-Folder
 
