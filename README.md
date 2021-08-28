@@ -8,7 +8,8 @@
     - [Build-Module.ps1](#build-moduleps1)
     - [Module-Settings.json](#module-settingsjson)
   - [Code](#code)
-    - [Get-PRESomeSettings.ps1](#get-presomesettingsps1)
+    - [Get-PRETemplate.ps1](#get-pretemplateps1)
+    - [Write-PRELog.ps1](#write-prelogps1)
   - [Module-Folder](#module-folder)
     - [Manifest-File](#manifest-file)
     - [Module-File](#module-file)
@@ -60,11 +61,15 @@ The settings-file will be created, if you build the module at the first time and
 
 ## Code
 
-In this folder save all your functions as PS1-Files with the Name of the function you want to have in the Module. e.g. Get-PRESomeSettings.ps1.
+In this folder save all your functions as PS1-Files with the Name of the function you want to have in the Module. e.g. Get-PRETemplate.ps1.
 
-### Get-PRESomeSettings.ps1
+### Get-PRETemplate.ps1
 
 This is an example function-file, you can copy and rename this file for your own use. Before you build your module, please be sure that you renamed the function name within the file.
+
+### Write-PRELog.ps1
+
+This is an example Log-function to write information to the specified logfile. If no logfile is ommited, the default logfile will be used (<ModulePath\ModuleName.log>).
 
 ## Module-Folder
 
