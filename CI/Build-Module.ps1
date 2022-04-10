@@ -121,12 +121,12 @@ if($TestsResult.FailedCount -eq 0){
     Describe 'General module control' -Tags 'FunctionalQuality'   {
 
         It "Import $ModuleName without errors" {
-            { Import-Module -Name $Manifest -Force -ErrorAction Stop } | Should Not Throw
+            { Import-Module -Name $Manifest -Force -ErrorAction Stop } | Should -Not Throw
             Get-Module $ModuleName | Should -Not -BeNullOrEmpty
         }
 
         It "Get-Command $ModuleName without errors" {
-            { Get-Command -Module $ModuleName -ErrorAction Stop } | Should Not Throw
+            { Get-Command -Module $ModuleName -ErrorAction Stop } | Should -Not Throw
             Get-Command -Module $ModuleName | Should -Not -BeNullOrEmpty
         }
 
