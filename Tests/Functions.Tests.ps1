@@ -21,9 +21,15 @@ Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1" | ForEach-Object {
 
     Describe "Testing Code-file $($_.Name)" {
 
+        . ($_.FullName)
         $ScriptName = $_.BaseName
-        $Verb = @( $($_.Name) -split '-' )[0]
+        $Verb = @( $($ScriptName) -split '-' )[0]
 
+        #$DetailedHelp  = Get-Help $ScriptName -Detailed
+        $ScriptCommand = Get-Command -Name $ScriptName -All
+        $Ast           = $ScriptCommand.ScriptBlock.Ast
+                
+        
         Context "Naming" {
             It "$ScriptName should have an approved verb" {
                 ( $Verb -in @( Get-Verb ).Verb ) | Should -Be $true
@@ -40,22 +46,17 @@ Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1" | ForEach-Object {
             }
         }
 
-        . $_.FullName
-        $DetailedHelp  = Get-Help $ScriptName -Detailed
-        $ScriptCommand = Get-Command -Name $ScriptName -All
-        $Ast           = $ScriptCommand.ScriptBlock.Ast
-        
         Context "Synopsis" {
             It "$ScriptName should have a SYNOPSIS" {
-                ( $DetailedHelp -match 'SYNOPSIS' ) | Should -Be $true
+                ( $Ast -match 'SYNOPSIS' ) | Should -Be $true
             }
     
             It "$ScriptName should have a DESCRIPTION" {
-                ( $DetailedHelp -match 'DESCRIPTION' ) | Should -Be $true
+                ( $Ast -match 'DESCRIPTION' ) | Should -Be $true
             }
     
             It "$ScriptName should have a EXAMPLE" {
-                ( $DetailedHelp -match 'EXAMPLE' ) | Should -Be $true
+                ( $Ast -match 'EXAMPLE' ) | Should -Be $true
             }
 
         }
@@ -72,10 +73,12 @@ Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1" | ForEach-Object {
 
             $DefaultParams = @( 'Verbose', 'Debug', 'ErrorAction', 'WarningAction', 'InformationAction', 'ErrorVariable', 'WarningVariable', 'InformationVariable', 'OutVariable', 'OutBuffer', 'PipelineVariable')
             foreach ( $p in @( $ScriptCommand.Parameters.Keys | Where-Object { $_ -notin $DefaultParams } | Sort-Object ) ) {
+                
+                <#
                 It "$ScriptName the Help-text for paramater '$( $p )' should exist" {
                     ( $p -in $DetailedHelp.parameters.parameter.name ) | Should -Be $true
                 }
-    
+                #>
                 $Declaration = ( ( @( $Ast.FindAll( { $true } , $true ) ) | Where-Object { $_.Name.Extent.Text -eq "$('$')$p" } ).Extent.Text -replace 'INT32', 'INT' )
                 #$VariableType = ( "\[$( $ScriptCommand.Parameters."$p".ParameterType.Name )\]" -replace 'INT32', 'INT' )
                 $VariableTypeFull = "\[$( $ScriptCommand.Parameters."$p".ParameterType.FullName )\]"
@@ -107,11 +110,6 @@ Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1" | ForEach-Object {
             }
         }
         
-        Context "Error-Handling" {
-            It "$ScriptName should have a try-catch-block" {
-                (($Ast -match 'try') -and ($Ast -match 'catch') -and ($Ast -match '\$error.Clear()')) | Should -be $true
-            }
-        }
     }
 }
 
