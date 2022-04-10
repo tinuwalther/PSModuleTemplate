@@ -15,7 +15,7 @@ $CISourcePath     = Join-Path -Path $Root -ChildPath "CI"
 $CodeSourcePath   = Join-Path -Path $Root -ChildPath "Code"
 $TestsScript      = Join-Path -Path $TestsPath -ChildPath "Functions.Tests.ps1"
 $TestsFailures    = Join-Path -Path $TestsPath -ChildPath "Functions.Tests.json"
-$Settings         = Join-Path -Path $CISourcePath -ChildPath "Module-Settings.json"    
+$Settings         = Join-Path -Path $CISourcePath -ChildPath "Module-Settings.json"
 #endregion
 
 #region Module-Settings
@@ -38,7 +38,6 @@ else{
     $ModuleCompany     = Read-Host 'Enter the Company or vendor of this module'
     $ModulePrefix      = Read-Host 'Enter the Prefix for all functions of this module'
 }
-
 [PSCustomObject] @{
     ModuleName        = $ModuleName
     ModuleVersion     = $ModuleVersion
@@ -62,14 +61,11 @@ if(Test-Path -Path $TestsFailures){
     $newname   = $($file.Name -replace '.json',"-$($timestamp).json") 
     Rename-Item -Path $TestsFailures -NewName $newname
 }
-
 Write-Host "[BUILD] [TEST]  Running Function-Tests" -ForegroundColor Green
-#$TestsResult      = Invoke-Pester -Script $TestsScript -PassThru -Show None -> for Pester before 5.2.2
-#$TestsResult      = Invoke-Pester -Script $TestsScript -Output Normal -PassThru
-#if($TestsResult.FailedCount -eq 0){  
-
+#$TestsResult = Invoke-Pester -Script $TestsScript -PassThru -Show None -> for Pester before 5.2.2
+$TestsResult = Invoke-Pester -Script $TestsScript -Output Normal -PassThru
+if($TestsResult.FailedCount -eq 0){    
     $ModuleFolderPath = Join-Path -Path $Root -ChildPath $ModuleName
-
     #$ModuleFolderPath = $Root
     if(-not(Test-Path -Path $ModuleFolderPath)){
         $null = New-Item -Path $ModuleFolderPath -ItemType Directory
@@ -115,35 +111,50 @@ Write-Host "[BUILD] [TEST]  Running Function-Tests" -ForegroundColor Green
 
     Write-Host "[BUILD] [PSD1 ] Adding functions to export" -ForegroundColor Green
     $FunctionsToExport = $PublicFunctions.BaseName
-    $Manifest   = Join-Path -Path $ModuleFolderPath -ChildPath "$($ModuleName).psd1"
+    $Manifest = Join-Path -Path $ModuleFolderPath -ChildPath "$($ModuleName).psd1"
     Update-ModuleManifest -Path $Manifest -FunctionsToExport $FunctionsToExport -ModuleVersion $ModuleVersion
-
-    $Logfile = Join-Path -Path $ModuleFolderPath -ChildPath "$($ModuleName).log"
-    $null = New-Item -Path $Logfile -ItemType File -Force
 
     Write-Host "[BUILD] [END  ] [PSD1] building Manifest" -ForegroundColor Green
     #endregion
-    
-    Write-Host "[BUILD] [END]   Launching Build Process" -ForegroundColor Green	
-#}
-<#
-else{
-    $TestsArray = $TestsResult.TestResult | ForEach-Object {
-        if($_.Passed -eq $false){
-            [PSCustomObject] @{
-                Describe = $_.Describe
-                Context  = $_.Context
-                Test     = $_.Name
-                Result   = $_.Result
-                Message  = $_.FailureMessage
+
+    #region General Module-Tests
+    Describe 'General module control' -Tags 'FunctionalQuality'   {
+
+        It "Import $ModuleName without errors" {
+            { Import-Module -Name $Manifest -Force -ErrorAction Stop } | Should Not Throw
+            Get-Module $ModuleName | Should -Not -BeNullOrEmpty
+        }
+
+        It "Get-Command $ModuleName without errors" {
+            { Get-Command -Module $ModuleName -ErrorAction Stop } | Should Not Throw
+            Get-Command -Module $ModuleName | Should -Not -BeNullOrEmpty
+        }
+
+        $FunctionsToExport | ForEach-Object {
+            $functionname = $_
+            It "Get-Command -Module $ModuleName should include Function $($functionname)" {
+                Get-Command -Module $ModuleName | ForEach-Object { 
+                    {if($functionname -match $_.Name){$true}else{$false}} | should -BeTrue   
+                }
             }
         }
-    }
-    $TestsArray | ConvertTo-Json | Out-File -FilePath $TestsFailures -Encoding utf8
-    Write-Host "[BUILD] [END]   [TEST] Function-Tests, any Errors can be found in $($TestsFailures)" -ForegroundColor Red
-    Write-Host "[BUILD] [END]   Build Process with $($TestsResult.FailedCount) Errors" -ForegroundColor Red	
-}
-#>
-Write-Host "[BUILD] [END] Build Process" -ForegroundColor Green	
 
-Write-Host "Write and run your Module.Tests.ps1 before you publish the Module!" -ForegroundColor Yellow
+        It "Removes $ModuleName without error" {
+            { Remove-Module -Name $ModuleName -ErrorAction Stop} | Should -Not Throw
+            Get-Module $ModuleName | Should beNullOrEmpty
+        }
+
+    }
+    #endregion
+    Write-Host "[BUILD] [END]   Launching Build Process" -ForegroundColor Green	
+}
+else{
+    $FailedTests = $TestsResult.Failed | Select-Object -Property Name, Path, ExpandedName, ExpandedPath, Result, ErrorRecord, Duration, ItemType
+    if($FailedTests){
+        $FailedTests | ConvertTo-Json -Depth 1 -WarningAction Ignore | Out-File -FilePath $TestsFailures -Encoding utf8
+        Write-Host "[BUILD] [END]   [TEST] Function-Tests, any Errors can be found in $($TestsFailures)" -ForegroundColor Red
+    }else{
+        Write-Warning "There is something wrong in paradise $($TestArray.Get()))"
+    }
+    Write-Host "[BUILD] [END]   Launching Build Process with $($TestsResult.FailedCount) Errors" -ForegroundColor Red	
+}
