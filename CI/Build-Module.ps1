@@ -115,37 +115,7 @@ if($TestsResult.FailedCount -eq 0){
     Update-ModuleManifest -Path $Manifest -FunctionsToExport $FunctionsToExport -ModuleVersion $ModuleVersion
 
     Write-Host "[BUILD] [END  ] [PSD1] building Manifest" -ForegroundColor Green
-    #endregion
 
-    #region General Module-Tests
-    Describe 'General module control' -Tags 'FunctionalQuality'   {
-
-        It "Import $ModuleName without errors" {
-            { Import-Module -Name $Manifest -Force -ErrorAction Stop } | Should -Not Throw
-            Get-Module $ModuleName | Should -Not -BeNullOrEmpty
-        }
-
-        It "Get-Command $ModuleName without errors" {
-            { Get-Command -Module $ModuleName -ErrorAction Stop } | Should -Not Throw
-            Get-Command -Module $ModuleName | Should -Not -BeNullOrEmpty
-        }
-
-        $FunctionsToExport | ForEach-Object {
-            $functionname = $_
-            It "Get-Command -Module $ModuleName should include Function $($functionname)" {
-                Get-Command -Module $ModuleName | ForEach-Object { 
-                    {if($functionname -match $_.Name){$true}else{$false}} | should -BeTrue   
-                }
-            }
-        }
-
-        It "Removes $ModuleName without error" {
-            { Remove-Module -Name $ModuleName -ErrorAction Stop} | Should -Not Throw
-            Get-Module $ModuleName | Should beNullOrEmpty
-        }
-
-    }
-    #endregion
     Write-Host "[BUILD] [END]   Launching Build Process" -ForegroundColor Green	
 }
 else{
