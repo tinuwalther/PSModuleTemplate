@@ -1,9 +1,11 @@
 # Pester: https://pester-docs.netlify.app
 # Invoke-Pester -Script ./Tests/Module.Tests.ps1 -Output Detailed
 
+$ModuleNameToTest = 'TestMe'
+$ModuleFullNameToTest = '/Users/Tinu/Temp/PSModuleTemplate/TestMe/TestMe.psd1'
+
 BeforeAll{
     #Do some cleanup- or initial tasks
-    $ModuleNameToTest = 'TestMe'
     $Error.Clear()
     Clear-Host
 }
@@ -13,18 +15,17 @@ Describe 'Module Tests' -Tags 'FunctionalQuality' {
 
     Context "Import Module" {
         # Test Import-Module
-        It "Import $ModuleNameToTest should not throw" {
-            $ModuleFullNameToTest = '/Users/Tinu/Temp/PSModuleTemplate/TestMe/TestMe.psd1'
+        It "Import $ModuleNameToTest should not throw" -TestCases @{ ModuleNameToTest = $ModuleNameToTest; ModuleFullNameToTest = $ModuleFullNameToTest } {
             $ActualValue = Import-Module -FullyQualifiedName $ModuleFullNameToTest -Force -ErrorAction Stop
             { $ActualValue  } | Should -Not -Throw
         }
     
         # Test Get-Command
-        It "Get-Command -Module $ModuleNameToTest should not throw" {
+        It "Get-Command -Module $ModuleNameToTest should not throw" -TestCases @{ ModuleNameToTest = $ModuleNameToTest } {
             $ActualValue = Get-Command -Module $ModuleNameToTest -ErrorAction Stop
             { $ActualValue } | Should -Not -Throw
         }
-        It "Get-Command -Module $ModuleNameToTest should return commands" {
+        It "Get-Command -Module $ModuleNameToTest should return commands" -TestCases @{ ModuleNameToTest = $ModuleNameToTest } {
             $ActualValue = (Get-Command -Module $ModuleNameToTest).ExportedCommands
             { $ActualValue  } | Should -Not -BeNullOrEmpty
         }
@@ -33,28 +34,28 @@ Describe 'Module Tests' -Tags 'FunctionalQuality' {
     Context "Functions" {
         # Write for each function one test for { $ActualValue } | should -Not -Throw
         $FunctionNameToTest = 'Write-PRELog'
-        It "$($FunctionNameToTest) should not throw" {
-            Mock -ModuleName $ModuleNameToTest Write-PRELog { return $null }
+        It "$($FunctionNameToTest) should not throw" -TestCases @{ FunctionNameToTest = $FunctionNameToTest; ModuleNameToTest = $ModuleNameToTest } {
+            Mock -ModuleName $ModuleNameToTest $FunctionNameToTest { return $null }
             $ActualValue = Write-PRELog -Status WARNING -Source "Module-Test" -Message "Test Write-PRELog"
             { $ActualValue } | should -Not -Throw
         }
 
         $FunctionNameToTest = 'Get-PRETemplate'
-        It "$($FunctionNameToTest) should not throw" {
-            Mock -ModuleName $ModuleNameToTest Get-PRETemplate { return @{'Name' = 'Angus Young'} }
+        It "$($FunctionNameToTest) should not throw" -TestCases @{ FunctionNameToTest = $FunctionNameToTest; ModuleNameToTest = $ModuleNameToTest } {
+            Mock -ModuleName $ModuleNameToTest $FunctionNameToTest { return @{'Name' = 'Angus Young'} }
             $ActualValue = Get-PRETemplate -Name "Angus Young"
             { $ActualValue } | should -Not -Throw
         }
     }
 
     Context "Remove Module" {
-        It "Removes $ModuleNameToTest should not throw" {
+        It "Removes $ModuleNameToTest should not throw" -TestCases @{ ModuleNameToTest = $ModuleNameToTest} {
             $ActualValue = Remove-Module -Name $ModuleNameToTest -ErrorAction Stop
             { $ActualValue } | Should -not -Throw
             Get-Module -Name $ModuleNameToTest | Should -beNullOrEmpty
         }
 
-        It "Get-Module -Name $ModuleNameToTest should be NullOrEmpty" {
+        It "Get-Module -Name $ModuleNameToTest should be NullOrEmpty" -TestCases @{ ModuleNameToTest = $ModuleNameToTest} {
             $ActualValue = Get-Module -Name $ModuleNameToTest
             $ActualValue | Should -beNullOrEmpty
         }

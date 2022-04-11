@@ -20,6 +20,9 @@ function Write-PRELog{
         .PARAMETER MaxLogFileSizeMB
         Max file-size of the logfile, if the file is greather than max-size it will be renamed.
 
+        .EXAMPLE
+        Write-Log -Status WARNING -Source "Module-Test" -Message "Test Write-Log"
+
         .NOTES
         2021-08-10, Martin Walther, 1.0.0, Initial version
 

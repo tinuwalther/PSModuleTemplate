@@ -1,6 +1,3 @@
-# Some examples are from Josh Burkard, thanks!
-# https://www.burkard.it/2019/08/pester-tests-for-powershell-functions/
-
 #region prepare folders
 $Current          = (Split-Path -Path $MyInvocation.MyCommand.Path)
 $Root             = ((Get-Item $Current).Parent).FullName
@@ -17,68 +14,76 @@ if([String]::IsNullOrEmpty($ModulePrefix)){
 $CommonPrefix = $ModulePrefix
 #endregion
 
-Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1" | ForEach-Object {
+BeforeDiscovery {
+    $CodeFile = Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1"
+}
 
-    Describe "Testing Code-file $($_.Name)" {
+foreach($file in $CodeFile){
 
-        . ($_.FullName)
-        $ScriptName = $_.BaseName
-        $Verb = @( $($ScriptName) -split '-' )[0]
+    . ($file.FullName)
 
-        #$DetailedHelp  = Get-Help $ScriptName -Detailed
-        $ScriptCommand = Get-Command -Name $ScriptName -All
-        $Ast           = $ScriptCommand.ScriptBlock.Ast
-                
-        
-        Context "Naming" {
-            It "$ScriptName should have an approved verb" {
-                ( $Verb -in @( Get-Verb ).Verb ) | Should -Be $true
-            }
-    
-            try {
-                $FunctionPrefix = @( $ScriptName -split '-' )[1].Substring( 0, $CommonPrefix.Length )
-            }
-            catch {
-                $FunctionPrefix = @( $ScriptName -split '-' )[1]
-            }
-            It "$ScriptName Noun should have the Prefix '$($CommonPrefix)'" {
-                $FunctionPrefix | Should -match $CommonPrefix
-            }
-        }
+    #region variable
+    $ScriptName = $file.BaseName
+    $Verb = @( $($ScriptName) -split '-' )[0]
 
-        Context "Synopsis" {
-            It "$ScriptName should have a SYNOPSIS" {
-                ( $Ast -match 'SYNOPSIS' ) | Should -Be $true
+    try {
+        $FunctionPrefix = @( $ScriptName -split '-' )[1].Substring( 0, $CommonPrefix.Length )
+    }
+    catch {
+        $FunctionPrefix = @( $ScriptName -split '-' )[1]
+    }
+
+    $DetailedHelp  = Get-Help $ScriptName -Detailed
+    $ScriptCommand = Get-Command -Name $ScriptName -All
+    $Ast           = $ScriptCommand.ScriptBlock.Ast
+    #endregion
+
+    Describe "Test Code-file $($file.Name)" {
+
+        Context "Naming of $($file.BaseName)" {
+
+            It "$ScriptName should have an approved verb -> $Verb" -TestCases @{ Verb = $Verb} {
+                ( $Verb -in @( Get-Verb ).Verb ) | Should -BeTrue
             }
-    
-            It "$ScriptName should have a DESCRIPTION" {
-                ( $Ast -match 'DESCRIPTION' ) | Should -Be $true
-            }
-    
-            It "$ScriptName should have a EXAMPLE" {
-                ( $Ast -match 'EXAMPLE' ) | Should -Be $true
+
+            It "$ScriptName Noun should have the Prefix '$($CommonPrefix)'" -TestCases @{ FunctionPrefix = $FunctionPrefix; CommonPrefix = $CommonPrefix } {
+                $FunctionPrefix | Should -Be $CommonPrefix
             }
 
         }
 
-        Context "Parameters" {
+        Context "Synopsis of $($file.BaseName)" {
 
-            It "$ScriptName $($_.Name) should have a function $ScriptName" {
+            It "$ScriptName should have a SYNOPSIS" -TestCases @{ Ast = $Ast } {
+                ( $Ast -match 'SYNOPSIS' ) | Should -BeTrue
+            }
+
+            It "$ScriptName should have a DESCRIPTION" -TestCases @{ Ast = $Ast } {
+                ( $Ast -match 'DESCRIPTION' ) | Should -BeTrue
+            }
+    
+            It "$ScriptName should have a EXAMPLE" -TestCases @{ Ast = $Ast } {
+                ( $Ast -match 'EXAMPLE' ) | Should -BeTrue
+            }
+
+        }
+
+        Context "Parameters of $($file.BaseName)" {
+
+            It "$($file.Name) should have a function named $($file.BaseName)" -TestCases @{ Ast = $Ast; ScriptName = $ScriptName } {
                 ($Ast -match $ScriptName) | Should -be $true
             }
 
-            It "$ScriptName should have a CmdletBinding" {
+            It "$ScriptName should have a CmdletBinding" -TestCases @{ Ast = $Ast } {
                 [boolean]( @( $Ast.FindAll( { $true } , $true ) ) | Where-Object { $_.TypeName.Name -eq 'cmdletbinding' } ) | Should -Be $true
             }
 
             $DefaultParams = @( 'Verbose', 'Debug', 'ErrorAction', 'WarningAction', 'InformationAction', 'ErrorVariable', 'WarningVariable', 'InformationVariable', 'OutVariable', 'OutBuffer', 'PipelineVariable')
             foreach ( $p in @( $ScriptCommand.Parameters.Keys | Where-Object { $_ -notin $DefaultParams } | Sort-Object ) ) {
                 
-                <#
                 It "$ScriptName the Help-text for paramater '$( $p )' should exist" {
                     ( $p -in $DetailedHelp.parameters.parameter.name ) | Should -Be $true
                 }
-                #>
                 $Declaration = ( ( @( $Ast.FindAll( { $true } , $true ) ) | Where-Object { $_.Name.Extent.Text -eq "$('$')$p" } ).Extent.Text -replace 'INT32', 'INT' )
                 #$VariableType = ( "\[$( $ScriptCommand.Parameters."$p".ParameterType.Name )\]" -replace 'INT32', 'INT' )
                 $VariableTypeFull = "\[$( $ScriptCommand.Parameters."$p".ParameterType.FullName )\]"
@@ -90,26 +95,8 @@ Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1" | ForEach-Object {
                     ( ( $Declaration -match $VariableType ) -or ( $Declaration -match $VariableTypeFull ) ) | Should -Be $true
                 }
             }
-    
+            
         }
-
-        Context "Variables" {
-            It "$ScriptName should have a function-variable" {
-                ($Ast -match '\$function\s=\s\$\(\$MyInvocation.MyCommand.Name\)') | Should -be $true
-            }
-
-            $code = $ScriptCommand.ScriptBlock
-            $ScriptVariables = $code.Ast.FindAll( { $true } , $true ) |
-                Where-Object { $_.GetType().Name -eq 'VariableExpressionAst' } |
-                Select-Object -Property VariablePath -ExpandProperty Extent
-    
-            foreach ( $sv in @( $ScriptVariables | Select-Object -ExpandProperty Text -Unique | Sort-Object ) ) {
-                It "$ScriptName variable '$( $sv )' should be in same (upper/lower) case everywhere" {
-                    [boolean]( $ScriptVariables | Where-Object { ( ( $_.Text -eq $sv ) -and ( $_.Text -cne $sv ) ) } ) | Should -Be $false
-                }
-            }
-        }
-        
     }
-}
 
+}
