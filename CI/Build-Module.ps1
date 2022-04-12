@@ -2,7 +2,7 @@
 
 if((Get-Module -Name Pester).Version -match '^3\.\d{1}\.\d{1}'){
     Remove-Module -Name Pester
-    Import-Module -Name Pester -MinimumVersion 4.4.1
+    Import-Module -Name Pester -MinimumVersion 5.2.2
 }
 
 Write-Host "[BUILD] [START] Launching Build Process" -ForegroundColor Green	
@@ -62,7 +62,8 @@ if(Test-Path -Path $TestsFailures){
     Rename-Item -Path $TestsFailures -NewName $newname
 }
 Write-Host "[BUILD] [TEST]  Running Function-Tests" -ForegroundColor Green
-$TestsResult      = Invoke-Pester -Script $TestsScript -PassThru -Show None
+#$TestsResult = Invoke-Pester -Script $TestsScript -PassThru -Show None -> for Pester before 5.2.2
+$TestsResult = Invoke-Pester -Script $TestsScript -Output Normal -PassThru
 if($TestsResult.FailedCount -eq 0){    
     $ModuleFolderPath = Join-Path -Path $Root -ChildPath $ModuleName
     #$ModuleFolderPath = $Root
@@ -114,52 +115,16 @@ if($TestsResult.FailedCount -eq 0){
     Update-ModuleManifest -Path $Manifest -FunctionsToExport $FunctionsToExport -ModuleVersion $ModuleVersion
 
     Write-Host "[BUILD] [END  ] [PSD1] building Manifest" -ForegroundColor Green
-    #endregion
 
-    #region General Module-Tests
-    Describe 'General module control' -Tags 'FunctionalQuality'   {
-
-        It "Import $ModuleName without errors" {
-            { Import-Module -Name $Manifest -Force -ErrorAction Stop } | Should Not Throw
-            Get-Module $ModuleName | Should Not BeNullOrEmpty
-        }
-
-        It "Get-Command $ModuleName without errors" {
-            { Get-Command -Module $ModuleName -ErrorAction Stop } | Should Not Throw
-            Get-Command -Module $ModuleName | Should Not BeNullOrEmpty
-        }
-
-        $FunctionsToExport | ForEach-Object {
-            $functionname = $_
-            It "Get-Command -Module $ModuleName should include Function $($functionname)" {
-                Get-Command -Module $ModuleName | ForEach-Object { 
-                    {if($functionname -match $_.Name){$true}else{$false}} | should -betrue   
-                }
-            }
-        }
-
-        It "Removes $ModuleName without error" {
-            { Remove-Module -Name $ModuleName -ErrorAction Stop} | Should not Throw
-            Get-Module $ModuleName | Should beNullOrEmpty
-        }
-
-    }
-    #endregion
     Write-Host "[BUILD] [END]   Launching Build Process" -ForegroundColor Green	
 }
 else{
-    $TestsArray = $TestsResult.TestResult | ForEach-Object {
-        if($_.Passed -eq $false){
-            [PSCustomObject] @{
-                Describe = $_.Describe
-                Context  = $_.Context
-                Test     = $_.Name
-                Result   = $_.Result
-                Message  = $_.FailureMessage
-            }
-        }
+    $FailedTests = $TestsResult.Failed | Select-Object -Property Name, Path, ExpandedName, ExpandedPath, Result, ErrorRecord, Duration, ItemType
+    if($FailedTests){
+        $FailedTests | ConvertTo-Json -Depth 1 -WarningAction Ignore | Out-File -FilePath $TestsFailures -Encoding utf8
+        Write-Host "[BUILD] [END]   [TEST] Function-Tests, any Errors can be found in $($TestsFailures)" -ForegroundColor Red
+    }else{
+        Write-Warning "There is something wrong in paradise $($TestArray.Get()))"
     }
-    $TestsArray | ConvertTo-Json | Out-File -FilePath $TestsFailures -Encoding utf8
-    Write-Host "[BUILD] [END]   [TEST] Function-Tests, any Errors can be found in $($TestsFailures)" -ForegroundColor Red
     Write-Host "[BUILD] [END]   Launching Build Process with $($TestsResult.FailedCount) Errors" -ForegroundColor Red	
 }
