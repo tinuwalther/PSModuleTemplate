@@ -28,7 +28,9 @@ if(Test-Path -Path $Settings){
     $ModuleDescription = $ModuleSettings.ModuleDescription
     $ModuleVersion     = $ModuleSettings.ModuleVersion
     $prompt            = Read-Host "Enter the Version number of this module in the Semantic Versioning notation [$( $ModuleVersion )]"
-    if (!$prompt -eq "") { $ModuleVersion = $prompt }else{
+    if (!$prompt -eq "") {
+        $ModuleVersion = $prompt
+    }else{
         $ModuleVersion = [Version]$ModuleSettings.ModuleVersion
         $ModuleVersion = "{0}.{1}.{2}" -f $ModuleVersion.Major, $ModuleVersion.Minor, ($ModuleVersion.Build + 1)
     }
@@ -39,7 +41,8 @@ if(Test-Path -Path $Settings){
 }
 else{
     $ModuleName        = Read-Host 'Enter the name of the module without the extension'
-    $ModuleVersion     = Read-Host 'Enter the Version number of this module in the Semantic Versioning notation [1.0.0]'
+    $ModuleVersion     = Read-Host 'Enter the Version number of this module in the Semantic Versioning notation [0.0.1]'
+    if ([String]::IsNullOrEmpty($ModuleVersion)){$ModuleVersion = '0.0.1'}
     $ModuleDescription = Read-Host 'Enter the Description of the functionality provided by this module'
     $ModuleAuthor      = Read-Host 'Enter the Author of this module'
     $ModuleCompany     = Read-Host 'Enter the Company or vendor of this module'
@@ -88,8 +91,9 @@ $TestsResult = Invoke-Pester -Script $TestsScript -Output Normal -PassThru
 if($TestsResult.FailedCount -eq 0){    
     
     $ModuleFolderPath = Join-Path -Path $Root -ChildPath $ModuleName
+
     if(-not(Test-Path -Path $ModuleFolderPath)){
-        $null = New-Item -Path $ModuleFolderPath -ItemType Directory
+        $null = New-Item -Path $ModuleFolderPath -ItemType Directory -Force
     }
 
     #region Update the Module-File

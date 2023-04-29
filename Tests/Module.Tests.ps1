@@ -8,10 +8,11 @@ $Settings         = Join-Path -Path $CISourcePath -ChildPath "Module-Settings.js
 
 if(Test-Path -Path $Settings){
     $ModuleSettings       = Get-content -Path $Settings | ConvertFrom-Json
+    $ModuleVersion        = $ModuleSettings.ModuleVersion
     $ModuleNameToTest     = $ModuleSettings.ModuleName
-    $ModuleFolderPath     = Join-Path -Path $Root -ChildPath $ModuleNameToTest
+    $ModuleFolderRootPath = Join-Path -Path $Root -ChildPath $ModuleNameToTest
+    $ModuleFolderPath     = Join-Path -Path $ModuleFolderRootPath -ChildPath $ModuleVersion
     $ModuleFullNameToTest = Join-Path -Path $ModuleFolderPath -ChildPath "$($ModuleNameToTest).psd1"
-    $ModulePrefix         = $ModuleSettings.ModulePrefix
 
     Import-LocalizedData -BaseDirectory $ModuleFolderPath -FileName "$($ModuleNameToTest).psd1" -BindingVariable Data
 
