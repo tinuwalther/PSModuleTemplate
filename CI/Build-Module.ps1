@@ -49,7 +49,11 @@ else{
     $ModulePrefix      = Read-Host 'Enter the Prefix for all functions of this module'
     $LastChange        = Read-Host 'Describe what did you change'
 }
-$ModuleName            =  $ModuleName.ToLower() -replace '\-', '.' # Lower-case is better for linux
+
+$ModuleName           =  $ModuleName -replace '\-', '.' # Lower-case is better for linux
+$ModuleFolderRootPath = Join-Path -Path $Root -ChildPath $ModuleName
+$ModuleFolderPath     = Join-Path -Path $ModuleFolderRootPath -ChildPath $ModuleVersion
+
 [PSCustomObject] @{
     ModuleName        = $ModuleName
     ModuleVersion     = $ModuleVersion
@@ -90,7 +94,7 @@ Write-Host "[BUILD] [TEST]  Running Function-Tests" -ForegroundColor Green
 $TestsResult = Invoke-Pester -Script $TestsScript -Output Normal -PassThru
 if($TestsResult.FailedCount -eq 0){    
     
-    $ModuleFolderPath = Join-Path -Path $Root -ChildPath $ModuleName
+    #$ModuleFolderPath = Join-Path -Path $Root -ChildPath $ModuleName
 
     if(-not(Test-Path -Path $ModuleFolderPath)){
         $null = New-Item -Path $ModuleFolderPath -ItemType Directory -Force
