@@ -10,13 +10,15 @@ Write-Host "[BUILD] [START] Launching Build Process" -ForegroundColor Green
 #region prepare folders
 $Current          = (Split-Path -Path $MyInvocation.MyCommand.Path)
 $Root             = ((Get-Item $Current).Parent).FullName
-$BackupPath       = Join-Path -Path $Root -ChildPath "Backup"
-$TestsPath        = Join-Path -Path $Root -ChildPath "Tests"
-$CISourcePath     = Join-Path -Path $Root -ChildPath "CI"
-$CodeSourcePath   = Join-Path -Path $Root -ChildPath "Code"
-$TestsScript      = Join-Path -Path $TestsPath -ChildPath "Functions.Tests.ps1"
-$TestsFailures    = Join-Path -Path $TestsPath -ChildPath "Failed.Tests.json"
-$Settings         = Join-Path -Path $CISourcePath -ChildPath "Module-Settings.json"
+$BackupPath       = Join-Path -Path $Root -ChildPath 'Backup'
+$TestsPath        = Join-Path -Path $Root -ChildPath 'Tests'
+$CISourcePath     = Join-Path -Path $Root -ChildPath 'CI'
+$CodeSourcePath   = Join-Path -Path $Root -ChildPath 'Code'
+$PrivatePath      = Join-Path -Path $CodeSourcePath -ChildPath 'Private'
+$PublicPath       = Join-Path -Path $CodeSourcePath -ChildPath 'Public'
+$TestsScript      = Join-Path -Path $TestsPath -ChildPath 'Functions.Tests.ps1'
+$TestsFailures    = Join-Path -Path $TestsPath -ChildPath 'Failed.Tests.json'
+$Settings         = Join-Path -Path $CISourcePath -ChildPath 'Module-Settings.json'
 #endregion
 
 #region Module-Settings
@@ -57,13 +59,18 @@ $ModuleName            =  $ModuleName.ToLower() -replace '\-', '.' # Lower-case 
     ModulePrefix      = $ModulePrefix
     LastChange        = $LastChange
 } | ConvertTo-Json | Out-File -FilePath $Settings -Encoding utf8
+#endregion
 
-Get-ChildItem -Path (Join-Path $CodeSourcePath -ChildPath 'Private') -Filter '*-*.ps1' | ForEach-Object {
+#region PRE-functions
+Copy-Item -Path $CodeSourcePath -Destination $BackupPath -Filter '*-PRE*.ps1' -Recurse -Force -Confirm:$false
+
+# Rename private and public PRE-functions
+Get-ChildItem -Path $PrivatePath -Filter '*-*.ps1' | ForEach-Object {
     $newname   = $($_.Name -replace '-PRE',"-$($ModulePrefix)") 
     (Get-Content -Path $_.FullName) -replace '-PRE',"-$($ModulePrefix)" | Set-Content -Path $_.FullName
     Rename-Item -Path $_.FullName -NewName $newname #-PassThru
 }
-Get-ChildItem -Path (Join-Path $CodeSourcePath -ChildPath 'Public') -Filter '*-*.ps1' | ForEach-Object {
+Get-ChildItem -Path $PublicPath -Filter '*-*.ps1' | ForEach-Object {
     $newname   = $($_.Name -replace '-PRE',"-$($ModulePrefix)") 
     (Get-Content -Path $_.FullName) -replace '-PRE',"-$($ModulePrefix)" | Set-Content -Path $_.FullName
     Rename-Item -Path $_.FullName -NewName $newname #-PassThru
@@ -83,20 +90,17 @@ Write-Host "[BUILD] [TEST]  Running Function-Tests" -ForegroundColor Green
 $TestsResult = Invoke-Pester -Script $TestsScript -Output Normal -PassThru
 if($TestsResult.FailedCount -eq 0){    
     
-    $ModuleFolderRootPath = Join-Path -Path $Root -ChildPath $ModuleName
-    $ModuleFolderPath = Join-Path -Path $ModuleFolderRootPath -ChildPath $ModuleVersion
-    #$ModuleFolderPath = $Root
+    $ModuleFolderPath = Join-Path -Path $Root -ChildPath $ModuleName
+
     if(-not(Test-Path -Path $ModuleFolderPath)){
         $null = New-Item -Path $ModuleFolderPath -ItemType Directory -Force
     }
-    #endregion
 
     #region Update the Module-File
-    # Remove existent PSM1-File
+    # Move existent PSM1-File to the backup-folder
     $ExportPath = Join-Path -Path $ModuleFolderPath -ChildPath "$($ModuleName).psm1"
     if(Test-Path $ExportPath){
         Write-Host "[BUILD] [PSM1 ] PSM1 file detected. Deleting..." -ForegroundColor Green
-        #Remove-Item -Path $ExportPath -Force
         Move-Item -Path $ExportPath -Destination $BackupPath -Force -Confirm:$false
     }
 
@@ -170,4 +174,11 @@ else{
 #region Module.Tests.ps1
 Write-Host "`n"
 Invoke-Pester -Script (Join-Path -Path $TestsPath -ChildPath "Module.Tests.ps1") -Output Detailed
+#endregion
+
+#region manually
+Write-Host "`nIf you have dependencies to other modules, please fill in to the module manifest (psd1) as RequiredModules. See at " -ForegroundColor Cyan
+Write-Host "https://learn.microsoft.com/en-us/powershell/scripting/developer/module/how-to-write-a-powershell-module-manifest?view=powershell-7.3" -ForegroundColor Cyan
+Write-Host "`nModule Manifest:"
+Import-LocalizedData -BaseDirectory $ModuleFolderPath -FileName "$($ModuleName).psd1"
 #endregion

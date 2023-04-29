@@ -51,6 +51,11 @@ Describe 'Module Tests' -Tags 'FunctionalQuality' {
         foreach($item in $Data.FunctionsToExport){
             #$FunctionNameToTest = 'Get-PRETemplate' -replace 'PRE', $ModulePrefix
             $FunctionNameToTest = $item
+            It "$($FunctionNameToTest) -WhatIf should not throw" -TestCases @{ FunctionNameToTest = $FunctionNameToTest; ModuleNameToTest = $ModuleNameToTest } {
+                Mock -ModuleName $ModuleNameToTest $FunctionNameToTest { return @{'Name' = 'Angus Young'} }
+                $ActualValue = '$FunctionNameToTest -Name "Angus Young" -WhatIf'
+                { $ActualValue } | should -Not -Throw
+            }
             It "$($FunctionNameToTest) should not throw" -TestCases @{ FunctionNameToTest = $FunctionNameToTest; ModuleNameToTest = $ModuleNameToTest } {
                 Mock -ModuleName $ModuleNameToTest $FunctionNameToTest { return @{'Name' = 'Angus Young'} }
                 $ActualValue = '$FunctionNameToTest -Name "Angus Young"'
