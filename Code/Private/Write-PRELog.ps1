@@ -28,7 +28,7 @@ function Write-PRELog{
 
     #>
 
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$True)]
     param(
         [Parameter(Mandatory=$false)]
         [string] $LogFile,

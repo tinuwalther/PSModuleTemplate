@@ -20,7 +20,7 @@ function Get-PRETemplate{
 
     #>
 
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$True)]
     param(
         [Parameter(Mandatory = $true)]
         [String]$Name
@@ -31,7 +31,7 @@ function Get-PRETemplate{
         foreach($item in $PSBoundParameters.keys){
             $params = "$($params) -$($item) $($PSBoundParameters[$item])"
         }
-        Write-PRELog -Status INFO -Message "Running $($function)$($params)" -Source $function
+        Write-MWALog -Status INFO -Message "Running $($function)$($params)" -Source $function
         $ret = $null
     }
 
@@ -59,7 +59,7 @@ function Get-PRETemplate{
             }
             #don't forget to clear the error-object
             $error.Clear()
-            Write-PRELog -Status ERROR -Message $ret -Source $function
+            Write-MWALog -Status ERROR -Message $ret -Source $function
         }
     }
 

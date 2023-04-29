@@ -1,13 +1,28 @@
 # Pester: https://pester-docs.netlify.app
-# Invoke-Pester -Script ./Tests/Module.Tests.ps1 -Output Detailed
+# Execute: Invoke-Pester -Script ./Tests/Module.Tests.ps1 -Output Detailed
 
-$ModuleNameToTest = 'TestMe'
-$ModuleFullNameToTest = '/Users/Tinu/Temp/PSModuleTemplate/TestMe/TestMe.psd1'
+$Current          = (Split-Path -Path $MyInvocation.MyCommand.Path)
+$Root             = ((Get-Item $Current).Parent).FullName
+$CISourcePath     = Join-Path -Path $Root -ChildPath "CI"
+$Settings         = Join-Path -Path $CISourcePath -ChildPath "Module-Settings.json"
+
+if(Test-Path -Path $Settings){
+    $ModuleSettings       = Get-content -Path $Settings | ConvertFrom-Json
+    $ModuleVersion        = $ModuleSettings.ModuleVersion
+    $ModuleNameToTest     = $ModuleSettings.ModuleName
+    $ModuleFolderRootPath = Join-Path -Path $Root -ChildPath $ModuleNameToTest
+    $ModuleFolderPath     = Join-Path -Path $ModuleFolderRootPath -ChildPath $ModuleVersion
+    $ModuleFullNameToTest = Join-Path -Path $ModuleFolderPath -ChildPath "$($ModuleNameToTest).psd1"
+
+    Import-LocalizedData -BaseDirectory $ModuleFolderPath -FileName "$($ModuleNameToTest).psd1" -BindingVariable Data
+
+}else{
+    exit -1
+}
 
 BeforeAll{
     #Do some cleanup- or initial tasks
     $Error.Clear()
-    Clear-Host
 }
 
 #region General Module-Tests
@@ -33,18 +48,19 @@ Describe 'Module Tests' -Tags 'FunctionalQuality' {
 
     Context "Functions" {
         # Write for each function one test for { $ActualValue } | should -Not -Throw
-        $FunctionNameToTest = 'Write-PRELog'
-        It "$($FunctionNameToTest) should not throw" -TestCases @{ FunctionNameToTest = $FunctionNameToTest; ModuleNameToTest = $ModuleNameToTest } {
-            Mock -ModuleName $ModuleNameToTest $FunctionNameToTest { return $null }
-            $ActualValue = Write-PRELog -Status WARNING -Source "Module-Test" -Message "Test Write-PRELog"
-            { $ActualValue } | should -Not -Throw
-        }
-
-        $FunctionNameToTest = 'Get-PRETemplate'
-        It "$($FunctionNameToTest) should not throw" -TestCases @{ FunctionNameToTest = $FunctionNameToTest; ModuleNameToTest = $ModuleNameToTest } {
-            Mock -ModuleName $ModuleNameToTest $FunctionNameToTest { return @{'Name' = 'Angus Young'} }
-            $ActualValue = Get-PRETemplate -Name "Angus Young"
-            { $ActualValue } | should -Not -Throw
+        foreach($item in $Data.FunctionsToExport){
+            #$FunctionNameToTest = 'Get-PRETemplate' -replace 'PRE', $ModulePrefix
+            $FunctionNameToTest = $item
+            It "$($FunctionNameToTest) -WhatIf should not throw" -TestCases @{ FunctionNameToTest = $FunctionNameToTest; ModuleNameToTest = $ModuleNameToTest } {
+                Mock -ModuleName $ModuleNameToTest $FunctionNameToTest { return @{'Name' = 'Angus Young'} }
+                $ActualValue = '$FunctionNameToTest -Name "Angus Young" -WhatIf'
+                { $ActualValue } | should -Not -Throw
+            }
+            It "$($FunctionNameToTest) should not throw" -TestCases @{ FunctionNameToTest = $FunctionNameToTest; ModuleNameToTest = $ModuleNameToTest } {
+                Mock -ModuleName $ModuleNameToTest $FunctionNameToTest { return @{'Name' = 'Angus Young'} }
+                $ActualValue = '$FunctionNameToTest -Name "Angus Young"'
+                { $ActualValue } | should -Not -Throw
+            }
         }
     }
 
