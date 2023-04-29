@@ -20,7 +20,7 @@ function Get-PRETemplate{
 
     #>
 
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$True)]
     param(
         [Parameter(Mandatory = $true)]
         [String]$Name
