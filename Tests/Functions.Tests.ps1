@@ -2,6 +2,8 @@
 $Current          = (Split-Path -Path $MyInvocation.MyCommand.Path)
 $Root             = ((Get-Item $Current).Parent).FullName
 $CodeSourcePath   = Join-Path -Path $Root -ChildPath "Code"
+$PublicFunctions  = Join-Path $CodeSourcePath -ChildPath 'Public'
+$PrivateFunctions = Join-Path $CodeSourcePath -ChildPath 'Private'
 $CISourcePath     = Join-Path -Path $Root -ChildPath "CI"
 $Settings         = Join-Path -Path $CISourcePath -ChildPath "Module-Settings.json"
 #endregion
@@ -15,7 +17,9 @@ $CommonPrefix = $ModulePrefix
 #endregion
 
 BeforeDiscovery {
-    $CodeFile = Get-ChildItem -Path $CodeSourcePath -Filter "*.ps1"
+    $CodeFile = @()
+    $CodeFile += Get-ChildItem -Path $PublicFunctions  -Filter "*.ps1"
+    $CodeFile += Get-ChildItem -Path $PrivateFunctions -Filter "*.ps1"
 }
 
 foreach($file in $CodeFile){

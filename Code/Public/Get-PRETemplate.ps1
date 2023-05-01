@@ -36,30 +36,33 @@ function Get-PRETemplate{
     }
 
     process{
-        try{
-            #region add your code here
-            $ret = [PSCustomObject]@{
-                Succeeded  = $true
-                Function   = $function
-                Name       = $Name
+        foreach($item in $PSBoundParameters.keys){ $params = "$($params) -$($item) $($PSBoundParameters[$item])" }
+        if ($PSCmdlet.ShouldProcess($params.Trim())) {
+            try{
+                #region add your code here
+                $ret = [PSCustomObject]@{
+                    Succeeded  = $true
+                    Function   = $function
+                    Name       = $Name
+                }
+                #endregion
             }
-            #endregion
-        }
-        catch{
-            $ret = [PSCustomObject]@{
-                Succeeded  = $false
-                Function   = $function
-                Scriptname = $($_.InvocationInfo.ScriptName)
-                LineNumber = $($_.InvocationInfo.ScriptLineNumber)
-                Activity   = $($_.CategoryInfo).Activity
-                Message    = $($_.Exception.Message)
-                Category   = $($_.CategoryInfo).Category
-                Exception  = $($_.Exception.GetType().FullName)
-                TargetName = $($_.CategoryInfo).TargetName
+            catch{
+                $ret = [PSCustomObject]@{
+                    Succeeded  = $false
+                    Function   = $function
+                    Scriptname = $($_.InvocationInfo.ScriptName)
+                    LineNumber = $($_.InvocationInfo.ScriptLineNumber)
+                    Activity   = $($_.CategoryInfo).Activity
+                    Message    = $($_.Exception.Message)
+                    Category   = $($_.CategoryInfo).Category
+                    Exception  = $($_.Exception.GetType().FullName)
+                    TargetName = $($_.CategoryInfo).TargetName
+                }
+                #don't forget to clear the error-object
+                $error.Clear()
+                Write-MWALog -Status ERROR -Message $ret -Source $function
             }
-            #don't forget to clear the error-object
-            $error.Clear()
-            Write-MWALog -Status ERROR -Message $ret -Source $function
         }
     }
 
