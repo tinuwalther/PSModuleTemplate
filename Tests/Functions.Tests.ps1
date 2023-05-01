@@ -17,6 +17,7 @@ $CommonPrefix = $ModulePrefix
 #endregion
 
 BeforeDiscovery {
+    $CodeFile = @()
     $CodeFile += Get-ChildItem -Path $PublicFunctions  -Filter "*.ps1"
     $CodeFile += Get-ChildItem -Path $PrivateFunctions -Filter "*.ps1"
 }

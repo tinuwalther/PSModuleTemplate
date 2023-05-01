@@ -58,7 +58,8 @@ function Write-PRELog{
 
     process{
 
-        if ($PSCmdlet.ShouldProcess($PSBoundParameters.Values)){
+        foreach($item in $PSBoundParameters.keys){ $params = "$($params) -$($item) $($PSBoundParameters[$item])" }
+        if ($PSCmdlet.ShouldProcess($params.Trim())) {
             try{
                 if([String]::IsNullOrEmpty($LogFile)){
                     $LogFile = $PSCommandPath -replace '.psm1', '.log'

@@ -36,7 +36,8 @@ function Get-PRETemplate{
     }
 
     process{
-        if ($PSCmdlet.ShouldProcess($PSBoundParameters.Values)){
+        foreach($item in $PSBoundParameters.keys){ $params = "$($params) -$($item) $($PSBoundParameters[$item])" }
+        if ($PSCmdlet.ShouldProcess($params.Trim())) {
             try{
                 #region add your code here
                 $ret = [PSCustomObject]@{
