@@ -27,16 +27,16 @@ function Get-PRETemplate{
     )
 
     begin{
+        #region Do not change this region
+        $StartTime = Get-Date
         $function = $($MyInvocation.MyCommand.Name)
-        foreach($item in $PSBoundParameters.keys){
-            $params = "$($params) -$($item) $($PSBoundParameters[$item])"
-        }
-        Write-MWALog -Status INFO -Message "Running $($function)$($params)" -Source $function
-        $ret = $null
+        Write-Verbose $('[', (Get-Date -f 'yyyy-MM-dd HH:mm:ss.fff'), ']', '[ Begin   ]', $($function) -Join ' ')
+        #endregion
     }
 
     process{
         foreach($item in $PSBoundParameters.keys){ $params = "$($params) -$($item) $($PSBoundParameters[$item])" }
+        Write-Verbose $('[', (Get-Date -f 'yyyy-MM-dd HH:mm:ss.fff'), ']', '[ Process ]', "$($function)$($params)" -Join ' ')
         if ($PSCmdlet.ShouldProcess($params.Trim())) {
             try{
                 #region add your code here
@@ -50,7 +50,7 @@ function Get-PRETemplate{
             catch{
                 $ret = [PSCustomObject]@{
                     Succeeded  = $false
-                    Function   = $function
+                    Function   = "$($function)$($params)"
                     Scriptname = $($_.InvocationInfo.ScriptName)
                     LineNumber = $($_.InvocationInfo.ScriptLineNumber)
                     Activity   = $($_.CategoryInfo).Activity
@@ -59,15 +59,25 @@ function Get-PRETemplate{
                     Exception  = $($_.Exception.GetType().FullName)
                     TargetName = $($_.CategoryInfo).TargetName
                 }
-                #don't forget to clear the error-object
                 $error.Clear()
+                $OutString | Format-List | Out-String | ForEach-Object { Write-Warning $_ }
                 Write-MWALog -Status ERROR -Message $ret -Source $function
+            }
+            finally {
+                $ret
             }
         }
     }
 
     end{
-        return $ret
+        #region Do not change this region
+        Write-Verbose $('[', (Get-Date -f 'yyyy-MM-dd HH:mm:ss.fff'), ']', '[ End     ]', $function -Join ' ')
+        $TimeSpan  = New-TimeSpan -Start $StartTime -End (Get-Date)
+        $Formatted = $TimeSpan | ForEach-Object {
+            '{1:0}h {2:0}m {3:0}s {4:000}ms' -f $_.Days, $_.Hours, $_.Minutes, $_.Seconds, $_.Milliseconds
+        }
+        Write-Verbose $('Finished in:', $Formatted -Join ' ')
+        #endregion
     }
 }
 

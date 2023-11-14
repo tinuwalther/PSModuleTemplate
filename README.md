@@ -18,13 +18,15 @@
     - [Functions.Tests.ps1](#functionstestsps1)
     - [Failed.Tests.json](#failedtestsjson)
     - [Module.Tests.ps1](#moduletestsps1)
+  - [Online help](#online-help)
+    - [Create new Help-files](#create-new-help-files)
 
 # PowerShell Module Template
 
 How to create a new PowerShell-Module with PSModuleTemplate?
 
-1. Create a new project in Git and clone it to your computer
-2. git clone <https://github.com/tinuwalther/PSModuleTemplate.git>  
+1. Create a new project in Git with a README.md and clone it to your computer
+2. git clone https://gitlab.inventx.ch/psmoduledevelopment/psmoduletemplate.git
 3. Copy the content from PSModuleTemplate into your new project
 4. Update the README.md with your information
 5. Save your function-files in the folder Code
@@ -32,11 +34,15 @@ How to create a new PowerShell-Module with PSModuleTemplate?
 
 ## README
 
-Information about your project.
+Information about your project. Help for all of your exported functions.
 
 ## CHANGELOG
 
-The Build-Module.ps1 update this file with your last change description.
+Version | Description | Date | Author
+-|-|-|-
+Major.Minor.Build | your last change | Get-Date | Author from the ModuleSettings.json
+
+The Build-Module.ps1 update this file with your last change description and the Version for Build-No only. If you want to change the Major or Minor, please update this numbers manual.
 
 ## CI
 
@@ -57,16 +63,16 @@ Open the Terminal and navigate to the Git-Project. Start the Build-Module.ps1 an
 
 ````PowerShell
 ./CI/Build-Module.ps1
-`````
+````
 
-`````text
+````text
 [BUILD] [START] Launching Build Process
 Enter the name of the module without the extension: Test-PSModuleTemplate
-Enter the Version number of this module in the Semantic Versioning notation [1.0.0]: 0.0.1
+Enter the Version number of this module in the Semantic Versioning notation [0.0.0]: 0.0.1
 Enter the Description of the functionality provided by this module: This is a PowerShell-Module to create simple PowerShell-Modules
 Enter the Author of this module: Martin Walther  
-Enter the Company or vendor of this module: Martin Walther Foto & IT
-Enter the Prefix for all functions of this module: MWA
+Enter the Company or vendor of this module: Inventx AG
+Enter the Prefix for all functions of this module: IX
 Describe what did you change: Initial upload
 [BUILD] [TEST]  Running Function-Tests
 
@@ -83,18 +89,18 @@ Tests Passed: 0, Failed: 0, Skipped: 0 NotRun: 0
 [BUILD] [PSD1 ] Adding functions to export
 [BUILD] [END  ] [PSD1] building Manifest
 [BUILD] [END]   Launching Build Process
-`````
+````
 
 ````PowerShell
 Import-Module ./test.psmoduletemplate/                                                                
 Get-Command -Module test.psmoduletemplate       
-`````
+````
 
-`````text
+````text
 CommandType     Name                                               Version    Source
 -----------     ----                                               -------    ------
 Function        Get-PRETemplate                                    0.0.1      test.psmoduletemplate
-`````
+````
 
 ### Module-Settings.json
 
@@ -151,9 +157,9 @@ You can call this Tests in a GitHub-Action or CI/CD-Pipeline or simple manually.
 
 ````PowerShell
 $TestsResult = Invoke-Pester -Script ./Tests/Module.Tests.ps1 -Output Detailed  -PassThru
-`````
+````
 
-`````text
+````text
 Describing Module Tests
  Context Import Module
    [+] Import test.psmoduletemplate should not throw 8ms (5ms|3ms)
@@ -166,4 +172,12 @@ Describing Module Tests
    [+] Get-Module -Name test.psmoduletemplate should be NullOrEmpty 4ms (3ms|1ms)
 Tests completed in 238ms
 Tests Passed: 6, Failed: 0, Skipped: 0 NotRun: 0
-`````
+````
+
+## Online help
+
+[Module-help.md](./Module-help.md) is the help-file.
+
+### Create new Help-files
+
+Start the script .\CI\Set-HelpFile.ps1

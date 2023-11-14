@@ -51,13 +51,15 @@ function Write-PRELog{
     )
 
     begin{
+        #region Do not change this region
+        $StartTime = Get-Date
         $function = $($MyInvocation.MyCommand.Name)
-        Write-Verbose "Running $function"
-        $ret = $null
+        Write-Verbose $('[', (Get-Date -f 'yyyy-MM-dd HH:mm:ss.fff'), ']', '[ Begin   ]', $function -Join ' ')
+        #endregion
     }
 
     process{
-
+        Write-Verbose $('[', (Get-Date -f 'yyyy-MM-dd HH:mm:ss.fff'), ']', '[ Process ]', $function -Join ' ')
         foreach($item in $PSBoundParameters.keys){ $params = "$($params) -$($item) $($PSBoundParameters[$item])" }
         if ($PSCmdlet.ShouldProcess($params.Trim())) {
             try{
@@ -115,12 +117,9 @@ function Write-PRELog{
                 }else{
                     Add-Content $LogFile -value "$($DateNow)`t$($LogStatus)`t[$($CurrentUser)]`t[$($Source)]`t$($Message)"
                 }
-
-                $ret = $true
             }
             catch [Exception]{
                 Write-Verbose "-> Catch block reached"
-                $ret = $false
                 $OutString = [PSCustomObject]@{
                     Succeeded  = $false
                     Function   = $function
@@ -133,13 +132,20 @@ function Write-PRELog{
                     TargetName = $($_.CategoryInfo).TargetName
                 }
                 $error.clear()
-                $OutString | Format-List | Out-String | ForEach-Object {Write-Host $_ -ForegroundColor Red}
+                $OutString | Format-List | Out-String | ForEach-Object { Write-Warning $_ }
             }
         }
     }
 
     end{
-        #return $ret
+        #region Do not change this region
+        Write-Verbose $('[', (Get-Date -f 'yyyy-MM-dd HH:mm:ss.fff'), ']', '[ End     ]', $function -Join ' ')
+        $TimeSpan  = New-TimeSpan -Start $StartTime -End (Get-Date)
+        $Formatted = $TimeSpan | ForEach-Object {
+            '{1:0}h {2:0}m {3:0}s {4:000}ms' -f $_.Days, $_.Hours, $_.Minutes, $_.Seconds, $_.Milliseconds
+        }
+        Write-Verbose $('Finished in:', $Formatted -Join ' ')
+        #endregion
     }
 
 }
